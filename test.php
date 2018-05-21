@@ -1,109 +1,75 @@
-<?php
-$file_list = glob('uploads/*.json');
-$test = [];
-foreach ($file_list as $key => $file) {
-    if ($key == $_GET['test']) {
-        $file_test = file_get_contents($file_list[$key]);
-        $decode_file = json_decode($file_test, true);
-        $test = $decode_file;
-    }
+﻿<?php
+Error_reporting(E_ALL);
+$numTest = htmlspecialchars($_GET["numTest"]);
+$dir    = 'uploads';
+$files = scandir($dir, 1);
+if (!array_key_exists("$numTest", $files )) {
+header ('"'.$_SERVER['SERVER_PROTOCOL']." 404 Not Found");
+header("Location: 404.php");
+exit();
 }
-// Проверяем массив test, если пустой, то 404
-if (empty($test)) {
-    header("HTTP/1.0 404 Not Found");
-    exit;
-}
-$question = $test[0]['question'];
-$answers[] = $test[0]['answers'];
-// Считаем кол-во правильных ответов
-$result_true = 0;
-foreach ($answers[0] as $item) {
-    if ($item['result'] === true) {
-        $result_true++;
-    }
-}
-// Проверяем и считаем правильность введенных ответов
-$post_true = 0;
-$post_false = 0;
-$test_success = 0;
-if (!empty($_POST['form_answer'])) {
-    foreach ($_POST['form_answer'] as $item) {
-        if ($answers[0][$item]['result'] === true) {
-            $post_true++;
-        }else{
-            $post_false++;
-        }
-    }
-    // Сравниваем и выводим результат
-    if ($post_true === $result_true && $post_false === 0) {
-        $test_success++;
-    }elseif ($post_true > 0 && $post_false > 0) {
-        echo 'Почти угадали =)';
-    }else{
-        echo 'Вы ошиблись =(';
-    }
-}
-// создаем сертификат
-if (!empty($_POST['name_form']))
-{
-    $name = $_POST['name_form'];
-    $im = imagecreatetruecolor(565, 800);
-    $backColor = imagecolorallocate($im, 255, 224, 221);
-    $textColor = imagecolorallocate($im, 0, 0, 0);
-    $fontFile = 'FONT.ttf';
-    $imBox = imagecreatefromjpeg('cover_big.jpg');
-    imagefill($im, 0, 0, $backColor);
-    imagecopy($im, $imBox, 0, 0, 0, 0, 565, 800);
-    imagettftext($im, 20, 0, 170, 392, $textColor, $fontFile, $name);
-    imagettftext($im, 20, 0, 170, 420, $textColor, $fontFile, 'Оценка: отлично');
-    imagettftext($im, 15, 0, 385, 745, $textColor, $fontFile, date("d.m.y"));
-    //header('Content-Type: image/jpeg');
-    imagejpeg($im, 'certificate.jpg');
-    imagedestroy($im);
-}
+echo "<h1>Тест № ".$numTest."</h1>";
+echo "<br/>";
+echo "<br/>";
+$content = file_get_contents ('uploads/'.$files[$numTest].'');
+$decodeData = json_decode ($content, true);
+echo "<br/>";
+echo "<br/>";
+$countQuestions = count($decodeData);
 ?>
 
-<!doctype html>
-<html lang="ru">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport"
-          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Тест: <?=$question?></title>
+<meta charset="utf-8">
 </head>
 <body>
-
-<form method="post">
-    <fieldset>
-        <legend><?=$question?></legend>
-        <?php foreach ($answers[0] as $key => $item) : ?>
-            <label><input type="checkbox" name="form_answer[]" value="<?=$key;?>"> <?=$item['answer'];?></label>
-        <?php endforeach; ?>
-    </fieldset>
-    <input type="submit" value="Отправить">
-</form>
-
-
-<?php if(!empty($test_success)): ?>
-<form method="post">
-    <input type="text" name="name_form" placeholder="Введите ваше имя">
-    <button>Отправить</button>
-</form>
-<?php endif;?>
-
-<?php if (!empty($_POST['name_form'])): ?>
-    <img src="certificate.jpg" alt="Ваш сертификат">
-<?php endif;?>
-
-
-
-<ul>
-    <li><a href="admin.php">Загрузить тест</a></li>
-    <li><a href="list.php">Список тестов</a></li>
-</ul>
-
-
-
+<?php
+echo '<form action="" method="POST">';
+for ($i=0; $i<$countQuestions; $i++) {
+	echo "<fieldset><legend>".$decodeData["$i"]["testQuestion"]."</legend>";
+	$countTestAnswers = count($decodeData["$i"]["testAnswers"]);
+	$wrightAnswers[] = ($decodeData["$i"]["wrightAnswer"]);
+	for ($j=0; $j<$countTestAnswers; $j++) {
+		echo '<label><input name="'.$i.'" type="radio" value="' . $decodeData["$i"]["testAnswers"][$j] . '">' . $decodeData["$i"]["testAnswers"][$j] . '</label>';
+	}
+	echo "</fieldset>";
+}
+echo '<input name="userName" maxlength="25" size="40" value="Вася">';
+echo '<input type="submit" value="Отправить"></form>';
+echo "<br/>";
+echo "<br/>";
+echo "<br/>";
+$result = 0;
+for ($i=0; $i<$countQuestions; $i++) {
+	if (!isset($_POST[$i])){
+		echo "<br/>";
+		echo "Ответьте на все вопросы и нажмите кнопку 'Отправить'";
+		exit();
+	}
+	elseif ($wrightAnswers[$i] == $_POST[$i]) {
+		$result = $result + 1;
+	}
+}
+//Запись имя пользователя и оценки в файл json
+$file = 'src/people.txt';
+$arr = array('a' => $_POST["userName"], 'b' => $result);
+$jsonEncode = json_encode($arr);
+file_put_contents($file, $jsonEncode);
+//Вывод результатов теста
+echo "Ваше имя: ".$_POST["userName"];
+echo "<br/>";
+echo "Верных ответов: ".$result;
+echo "<br/>";
+echo "Ваш сертификат:";
+echo "<br/>";
+echo '<img src="img.php">';
+?>
+<br />
+<br />
+<br />
+<br />
+<a href="admin.php">Загрузить тест</a>
+<br />
+<a href="list.php">Список тестов</a>
 </body>
 </html>
