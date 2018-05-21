@@ -10,7 +10,8 @@ if (!empty($file)) {
 	$maxsize = "100000000";
 	$extentions = array( "txt", "json");
 	$size = filesize ($_FILES['filename']['tmp_name']);
-	$type = strtolower(substr($filename, 1+strrpos($filename,".")));
+	$type_full = pathinfo($filename);
+	$type = $type_full['extension'];
 	$new_name = 'filename -'.time().'.'.$type;
 	if($size > $maxsize) {
 		echo "Файл больше 100 мб. Уменьшите размер вашего файла или загрузите другой. <br><a href='' onClick=window.close();>Закрыть окно</a>";
