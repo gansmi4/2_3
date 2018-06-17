@@ -20,7 +20,7 @@ if (!empty($file)) {
 		echo ' <b>Файл имеет недопустимое расширение</b>. Допустимыми являются форматы "txt" и "json". <br>';
 	}
 	else {
-		if (copy($file, "uploads/".$filename)) {
+		if (move_uploaded_file($file, "uploads/".$filename)) {
 			$host = $_SERVER['HTTP_HOST'];
 			$uri = rtrim(dirname($_SERVER['PHP_SELF']), '/\\');
 			$extra = 'list.php';
