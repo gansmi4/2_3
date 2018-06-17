@@ -4,8 +4,7 @@ $numTest = htmlspecialchars($_GET["numTest"]);
 $dir    = 'uploads';
 $files = scandir($dir, 1);
 if (!array_key_exists("$numTest", $files )) {
-header ('"'.$_SERVER['SERVER_PROTOCOL']." 404 Not Found");
-header("Location: 404.php");
+header ($_SERVER['SERVER_PROTOCOL']." 404 Not Found");
 exit();
 }
 echo "<h1>Тест № ".$numTest."</h1>";
